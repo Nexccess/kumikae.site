@@ -1,37 +1,845 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KUMIKAE | 次世代・不動産リノベ評価プラットフォーム</title>
+  <meta name="description" content="不動産AI査定と3Dリノベーションを融合。我が家の現在地を知り、未来を組み替える住まい育成シミュレーター。" />
 
-    <!-- SEO -->
-    <title>KUMIKAE | 次世代・不動産リノベ評価プラットフォーム</title>
-    <meta
-      name="description"
-      content="不動産AI査定と3Dリノベーションを融合。我が家の現在地を知り、未来を組み替える住まい育成シミュレーター。"
-    />
-    <meta name="theme-color" content="#0f172a" />
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- OGP -->
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="KUMIKAE | 次世代・不動産リノベ評価プラットフォーム" />
-    <meta
-      property="og:description"
-      content="不動産AI査定と3Dリノベーションを融合。我が家の現在地を知り、未来を組み替える住まい育成シミュレーター。"
-    />
-    <meta property="og:locale" content="ja_JP" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  <script>
+    // Tailwind カスタム設定
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* ベーススタイル */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      overflow-x: hidden;
+      margin: 0;
+    }
+
+    /* スクロールバー */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+
+    /* ── アニメーション定義 ── */
+
+    /* フェードインアップ（ページロード用） */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* パルス（バッジドット用） */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* バウンス（スクロール矢印用） */
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(7px); }
+    }
+
+    /* 水平スライド（矢印アイコン用） */
+    @keyframes slideX {
+      0%, 100% { transform: translateX(0); }
+      50%       { transform: translateX(5px); }
+    }
+
+    /* シャイン（ボタンホバー用） */
+    @keyframes shine {
+      from { transform: translateX(-120%) skewX(-20deg); }
+      to   { transform: translateX(220%)  skewX(-20deg); }
+    }
+
+    /* スクロール連動フェードイン */
+    @keyframes scrollFadeUp {
+      from { opacity: 0; transform: translateY(48px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── ユーティリティクラス ── */
+
+    .anim-fade-up {
+      opacity: 0;
+      animation: fadeInUp 0.75s cubic-bezier(0.22,1,0.36,1) forwards;
+    }
+
+    .pulse-dot {
+      animation: pulse 2.5s cubic-bezier(0.4,0,0.6,1) infinite;
+    }
+
+    .bounce-icon {
+      animation: bounce 1.8s ease-in-out infinite;
+    }
+
+    .slide-arrow {
+      animation: slideX 1.6s ease-in-out infinite;
+      display: inline-block;
+    }
+
+    /* スクロール到達時アニメ（JS で .visible を付与） */
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(52px);
+      transition: opacity 0.78s cubic-bezier(0.22,1,0.36,1),
+                  transform 0.78s cubic-bezier(0.22,1,0.36,1);
+    }
+    .scroll-reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ボタン: シャインエフェクト */
+    .btn-primary {
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.18s, background-color 0.18s, box-shadow 0.18s;
+    }
+    .btn-primary::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.22);
+      transform: translateX(-120%) skewX(-20deg);
+      transition: none;
+    }
+    .btn-primary:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 20px 60px rgba(16,185,129,0.35);
+    }
+    .btn-primary:hover::after {
+      animation: shine 0.55s ease-in-out forwards;
+    }
+    .btn-primary:active {
+      transform: scale(0.97);
+    }
+
+    /* ボタン: ナビCTA */
+    .btn-nav {
+      transition: transform 0.15s, background-color 0.15s;
+    }
+    .btn-nav:hover {
+      transform: scale(1.05);
+      background-color: #34d399;
+    }
+    .btn-nav:active { transform: scale(0.96); }
+
+    /* 選択カード */
+    .age-card {
+      transition: transform 0.2s cubic-bezier(0.22,1,0.36,1),
+                  border-color 0.2s,
+                  background-color 0.2s,
+                  box-shadow 0.2s;
+      cursor: pointer;
+    }
+    .age-card:hover {
+      transform: translateY(-5px) scale(1.02);
+    }
+    .age-card:active { transform: scale(0.97); }
+    .age-card.selected {
+      background-color: rgba(16,185,129,0.12);
+      border-color: #34d399;
+      box-shadow: 0 8px 32px rgba(16,185,129,0.15);
+    }
+
+    /* バリューカード */
+    .value-card {
+      transition: transform 0.28s cubic-bezier(0.22,1,0.36,1),
+                  box-shadow 0.28s;
+    }
+    .value-card:hover {
+      transform: translateY(-7px);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+    }
+
+    /* グリッドライン背景 */
+    .grid-bg {
+      background-image:
+        linear-gradient(rgba(52,211,153,0.18) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(52,211,153,0.18) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    /* グラスナビ */
+    .glass-nav {
+      background: linear-gradient(to bottom, rgba(15,23,42,0.96), rgba(15,23,42,0));
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    /* 区切り線 */
+    .divider {
+      background: linear-gradient(to right, transparent, #475569, transparent);
+      height: 1px;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ============================================================ -->
+<!-- NAVIGATION                                                    -->
+<!-- ============================================================ -->
+<nav class="glass-nav fixed top-0 left-0 right-0 z-50 flex items-center
+            justify-between px-6 py-4 md:px-12
+            anim-fade-up" style="animation-delay:0.05s;">
+
+  <!-- ロゴ -->
+  <div class="flex items-center gap-2.5 cursor-pointer select-none"
+       onclick="window.scrollTo({top:0,behavior:'smooth'})"
+       role="link" aria-label="KUMIKAEトップへ">
+    <div class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center
+                justify-center shadow-lg"
+         style="box-shadow:0 4px 16px rgba(16,185,129,0.35)">
+      <!-- BarChart3 相当SVG -->
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+           stroke="#0f172a" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="18" y1="20" x2="18" y2="10"/>
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6"  y1="20" x2="6"  y2="14"/>
+      </svg>
+    </div>
+    <span class="text-slate-50 font-black text-xl tracking-widest">KUMIKAE</span>
+  </div>
+
+  <!-- Nav CTA -->
+  <button onclick="goSimulator()"
+          class="btn-nav flex items-center gap-2 bg-emerald-500 text-slate-900
+                 font-semibold text-sm px-4 py-2 rounded-lg tracking-wide
+                 shadow-lg focus-visible:outline-none focus-visible:ring-2
+                 focus-visible:ring-emerald-300"
+          aria-label="シミュレーターを起動">
+    シミュレーター起動
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.5"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="5" y1="12" x2="19" y2="12"/>
+      <polyline points="12 5 19 12 12 19"/>
+    </svg>
+  </button>
+</nav>
+
+
+<!-- ============================================================ -->
+<!-- HERO SECTION                                                  -->
+<!-- ============================================================ -->
+<section class="relative min-h-screen flex flex-col items-center
+                justify-center px-6 overflow-hidden"
+         aria-label="ヒーローセクション">
+
+  <!-- 背景グリッド -->
+  <div aria-hidden="true"
+       class="grid-bg absolute inset-0 opacity-20 pointer-events-none"></div>
+
+  <!-- 背景グロー（メイン） -->
+  <div aria-hidden="true"
+       class="absolute top-1/3 left-1/2 pointer-events-none"
+       style="transform:translate(-50%,-50%);
+              width:700px; height:700px; border-radius:50%;
+              background:radial-gradient(circle, rgba(16,185,129,0.18) 0%, transparent 70%);
+              filter:blur(40px);"></div>
+
+  <!-- 背景グロー（サブ） -->
+  <div aria-hidden="true"
+       class="absolute pointer-events-none"
+       style="bottom:20%; right:20%;
+              width:350px; height:350px; border-radius:50%;
+              background:radial-gradient(circle, rgba(56,189,248,0.1) 0%, transparent 70%);
+              filter:blur(40px);"></div>
+
+  <!-- メインコンテンツ -->
+  <div class="relative z-10 text-center max-w-4xl mx-auto">
+
+    <!-- バッジ -->
+    <div class="anim-fade-up inline-flex items-center gap-2
+                border border-emerald-500/40 rounded-full
+                px-4 py-1.5 mb-8"
+         style="background:rgba(16,185,129,0.1); animation-delay:0.2s;"
+         role="note">
+      <span class="pulse-dot w-2 h-2 rounded-full bg-emerald-400"
+            aria-hidden="true"></span>
+      <span class="text-emerald-400 text-xs md:text-sm font-medium tracking-wider">
+        次世代・不動産リノベ評価プラットフォーム
+      </span>
+    </div>
+
+    <!-- キャッチコピー -->
+    <h1 class="anim-fade-up text-4xl md:text-6xl lg:text-7xl font-black
+               text-slate-50 leading-tight mb-6"
+        style="animation-delay:0.38s; line-height:1.18;">
+      我が家の<span class="text-emerald-400">〝現在地〟</span>を知る、<br />
+      未来を<span class="text-emerald-400">〝組み替える〟</span>。
+    </h1>
+
+    <!-- サブコピー -->
+    <p class="anim-fade-up text-slate-300 text-lg md:text-xl
+              max-w-2xl mx-auto leading-relaxed mb-12"
+       style="animation-delay:0.58s;">
+      不動産AI査定と3Dリノベーションを融合させた、<br class="hidden md:block" />
+      まったく新しい住まい育成シミュレーター。
+    </p>
+
+    <!-- プライマリCTA -->
+    <div class="anim-fade-up" style="animation-delay:0.78s;">
+      <button onclick="goSimulator()"
+              class="btn-primary inline-flex items-center gap-3
+                     bg-emerald-500 text-slate-900 font-black
+                     text-base md:text-lg px-8 md:px-12 py-4 md:py-5
+                     rounded-2xl shadow-2xl focus-visible:outline-none
+                     focus-visible:ring-2 focus-visible:ring-emerald-300"
+              style="box-shadow:0 16px 48px rgba(16,185,129,0.3);"
+              aria-label="3Dシミュレーションを開始する">
+        3Dシミュレーションを開始する
+        <span class="slide-arrow" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.5"
+               stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </span>
+      </button>
+
+      <!-- サポートテキスト -->
+      <p class="anim-fade-up text-slate-500 text-sm mt-4"
+         style="animation-delay:1.05s;">
+        無料 &middot; 登録不要 &middot; 約3分で完了
+      </p>
+    </div>
+  </div>
+
+  <!-- スクロールインジケーター -->
+  <div aria-hidden="true"
+       class="anim-fade-up absolute bottom-8 left-1/2 flex flex-col
+              items-center gap-1.5 pointer-events-none"
+       style="transform:translateX(-50%); animation-delay:1.4s;">
+    <span class="text-slate-500 text-xs tracking-widest uppercase">Scroll</span>
+    <span class="bounce-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+           stroke="#64748b" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </span>
+  </div>
+</section>
+
+
+<!-- ============================================================ -->
+<!-- HOOK SECTION                                                  -->
+<!-- ============================================================ -->
+<section class="relative py-24 px-6 overflow-hidden"
+         aria-label="築年数選択ステップ">
+
+  <div aria-hidden="true" class="divider absolute top-0 left-0 right-0"></div>
+  <div aria-hidden="true"
+       class="absolute inset-0 pointer-events-none"
+       style="background:rgba(30,41,59,0.3);"></div>
+
+  <div class="relative z-10 max-w-3xl mx-auto">
+
+    <!-- ヘッダー -->
+    <div class="scroll-reveal text-center mb-12">
+      <div class="inline-flex items-center gap-2 rounded-full px-4 py-1.5 mb-6"
+           style="background:rgba(51,65,85,0.5);
+                  border:1px solid rgba(100,116,139,0.5);">
+        <span class="text-slate-400 text-xs font-medium tracking-wider uppercase">
+          Step 1 of 1 — たった一問だけ
+        </span>
+      </div>
+      <h2 class="text-3xl md:text-4xl font-black text-slate-50 mb-4">
+        あなたの住まいの<br />
+        <span class="text-emerald-400">築年数</span>は？
+      </h2>
+      <p class="text-slate-400 text-base max-w-md mx-auto leading-relaxed">
+        これだけで、あなたに最適化されたリノベーションシナリオをAIが準備します。
+      </p>
+    </div>
+
+    <!-- 選択カード群 -->
+    <div class="scroll-reveal grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
+         role="radiogroup" aria-label="築年数を選択"
+         style="transition-delay:0.12s;">
+
+      <!-- カード: 築10年未満 -->
+      <button class="age-card rounded-2xl border border-slate-700/60 p-6
+                     text-left flex flex-col gap-3
+                     focus-visible:outline-none focus-visible:ring-2
+                     focus-visible:ring-emerald-400"
+              style="background:rgba(30,41,59,0.6);"
+              onclick="selectAge(this,'10')"
+              role="radio" aria-checked="false"
+              aria-label="築10年未満を選択">
+        <div class="card-check hidden w-6 h-6 rounded-full bg-emerald-500
+                    items-center justify-center ml-auto" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="#0f172a" stroke-width="3"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <span class="card-icon p-2.5 rounded-xl w-fit"
+              style="background:rgba(51,65,85,0.6); color:#94a3b8;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3l1.88 5.76a1 1 0 00.95.69h6.06l-4.9 3.57a1 1 0 00-.36 1.12L17.5 20l-4.9-3.57a1 1 0 00-1.18 0L6.5 20l1.87-5.86a1 1 0 00-.36-1.12L3.11 9.45h6.06a1 1 0 00.95-.69L12 3z"/>
+          </svg>
+        </span>
+        <span>
+          <span class="card-label font-bold text-lg block text-slate-100
+                       transition-colors duration-200">築10年未満</span>
+          <span class="text-slate-400 text-sm mt-0.5 block">比較的新しい物件</span>
+        </span>
+        <span class="text-slate-500 text-xs leading-relaxed">
+          資産価値の維持・向上戦略を提案
+        </span>
+      </button>
+
+      <!-- カード: 築20年前後 -->
+      <button class="age-card rounded-2xl border border-slate-700/60 p-6
+                     text-left flex flex-col gap-3
+                     focus-visible:outline-none focus-visible:ring-2
+                     focus-visible:ring-emerald-400"
+              style="background:rgba(30,41,59,0.6);"
+              onclick="selectAge(this,'20')"
+              role="radio" aria-checked="false"
+              aria-label="築20年前後を選択">
+        <div class="card-check hidden w-6 h-6 rounded-full bg-emerald-500
+                    items-center justify-center ml-auto" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="#0f172a" stroke-width="3"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <span class="card-icon p-2.5 rounded-xl w-fit"
+              style="background:rgba(51,65,85,0.6); color:#94a3b8;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </span>
+        <span>
+          <span class="card-label font-bold text-lg block text-slate-100
+                       transition-colors duration-200">築20年前後</span>
+          <span class="text-slate-400 text-sm mt-0.5 block">リノベの旬を迎えた物件</span>
+        </span>
+        <span class="text-slate-500 text-xs leading-relaxed">
+          コスト効果最大のリノベプランを診断
+        </span>
+      </button>
+
+      <!-- カード: 築30年以上 -->
+      <button class="age-card rounded-2xl border border-slate-700/60 p-6
+                     text-left flex flex-col gap-3
+                     focus-visible:outline-none focus-visible:ring-2
+                     focus-visible:ring-emerald-400"
+              style="background:rgba(30,41,59,0.6);"
+              onclick="selectAge(this,'30')"
+              role="radio" aria-checked="false"
+              aria-label="築30年以上を選択">
+        <div class="card-check hidden w-6 h-6 rounded-full bg-emerald-500
+                    items-center justify-center ml-auto" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+               stroke="#0f172a" stroke-width="3"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <span class="card-icon p-2.5 rounded-xl w-fit"
+              style="background:rgba(51,65,85,0.6); color:#94a3b8;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="2" width="16" height="20" rx="2"/>
+            <line x1="9" y1="7" x2="15" y2="7"/>
+            <line x1="9" y1="11" x2="15" y2="11"/>
+            <line x1="9" y1="15" x2="13" y2="15"/>
+          </svg>
+        </span>
+        <span>
+          <span class="card-label font-bold text-lg block text-slate-100
+                       transition-colors duration-200">築30年以上</span>
+          <span class="text-slate-400 text-sm mt-0.5 block">大きな変革が可能な物件</span>
+        </span>
+        <span class="text-slate-500 text-xs leading-relaxed">
+          フルリノベによる価値再生シナリオを提示
+        </span>
+      </button>
+    </div>
+
+    <!-- スタートボタン -->
+    <div class="scroll-reveal flex flex-col items-center gap-4"
+         style="transition-delay:0.25s;">
+      <button id="startBtn"
+              onclick="handleStart()"
+              disabled
+              class="flex items-center gap-3 font-bold text-base
+                     px-10 py-4 rounded-xl transition-all duration-300
+                     focus-visible:outline-none focus-visible:ring-2
+                     focus-visible:ring-emerald-400 cursor-not-allowed"
+              style="background:rgba(51,65,85,0.6);
+                     color:#64748b;
+                     border:1px solid rgba(100,116,139,0.5);"
+              aria-label="選択した条件でシミュレーターを開始"
+              aria-disabled="true">
+        この条件で始める
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+          <polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </button>
+
+      <p class="text-slate-600 text-xs text-center max-w-sm leading-relaxed">
+        ※ シミュレーター内で詳細情報を追加入力することで
+        より精度の高い診断が可能になります
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================ -->
+<!-- VALUE PROPOSITION SECTION                                     -->
+<!-- ============================================================ -->
+<section class="relative py-24 px-6 overflow-hidden"
+         aria-label="KUMIKAEの価値提案">
+
+  <div aria-hidden="true" class="divider absolute top-0 left-0 right-0"></div>
+
+  <div class="max-w-5xl mx-auto">
+
+    <!-- ヘッダー -->
+    <div class="scroll-reveal text-center mb-16">
+      <p class="text-emerald-400 text-sm font-semibold tracking-widest
+                uppercase mb-4">Why KUMIKAE</p>
+      <h2 class="text-3xl md:text-5xl font-black text-slate-50 leading-tight">
+        住まいの意思決定に、<br />
+        <span class="text-slate-300">「感情」と「数字」の両軸を。</span>
+      </h2>
+    </div>
+
+    <!-- カードグリッド -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6"
+         role="list" aria-label="価値提案カード一覧">
+
+      <!-- カード 1: 資産価値 -->
+      <article class="value-card scroll-reveal flex flex-col gap-5 p-8
+                      rounded-2xl border bg-slate-800/40
+                      border-emerald-500/30"
+               style="transition-delay:0.1s;"
+               role="listitem">
+        <span aria-hidden="true"
+              class="absolute text-slate-700/80 text-5xl font-black
+                     leading-none select-none"
+              style="position:relative; display:block;
+                     text-align:right; margin-bottom:-2.5rem;">01</span>
+        <div class="p-3 w-fit rounded-xl" style="background:rgba(51,65,85,0.5);">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+               stroke="#34d399" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+            <polyline points="17 6 23 6 23 12"/>
+          </svg>
+        </div>
+        <span class="text-slate-500 text-xs font-medium tracking-widest uppercase">
+          理の合理性
+        </span>
+        <h3 class="text-slate-50 text-2xl font-bold leading-snug">
+          AI不動産査定で<br />資産価値を可視化
+        </h3>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          周辺相場データ・築年数・立地スコアをAIが統合解析。あなたの物件の「今の値段」と「リノベ後の価値」を数値で明示します。
+        </p>
+        <div class="mt-auto pt-4" style="border-top:1px solid rgba(51,65,85,0.7);">
+          <span class="text-slate-500 text-xs font-medium"># 資産価値の最大化</span>
+        </div>
+      </article>
+
+      <!-- カード 2: 理想空間 -->
+      <article class="value-card scroll-reveal flex flex-col gap-5 p-8
+                      rounded-2xl border bg-slate-800/40
+                      border-sky-500/30"
+               style="transition-delay:0.25s;"
+               role="listitem">
+        <span aria-hidden="true"
+              class="absolute text-slate-700/80 text-5xl font-black
+                     leading-none select-none"
+              style="position:relative; display:block;
+                     text-align:right; margin-bottom:-2.5rem;">02</span>
+        <div class="p-3 w-fit rounded-xl" style="background:rgba(51,65,85,0.5);">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+               stroke="#38bdf8" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </div>
+        <span class="text-slate-500 text-xs font-medium tracking-widest uppercase">
+          情の理想空間
+        </span>
+        <h3 class="text-slate-50 text-2xl font-bold leading-snug">
+          3Dで体験する<br />「住みたい未来」
+        </h3>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          間取り変更・内装・設備を3D空間でリアルタイムに組み替え。暮らしのビジョンをシミュレーションしながら、理想の住まいを設計できます。
+        </p>
+        <div class="mt-auto pt-4" style="border-top:1px solid rgba(51,65,85,0.7);">
+          <span class="text-slate-500 text-xs font-medium"># 住居満足度の向上</span>
+        </div>
+      </article>
+
+      <!-- カード 3: 透明性 -->
+      <article class="value-card scroll-reveal flex flex-col gap-5 p-8
+                      rounded-2xl border bg-slate-800/40
+                      border-violet-500/30"
+               style="transition-delay:0.4s;"
+               role="listitem">
+        <span aria-hidden="true"
+              class="absolute text-slate-700/80 text-5xl font-black
+                     leading-none select-none"
+              style="position:relative; display:block;
+                     text-align:right; margin-bottom:-2.5rem;">03</span>
+        <div class="p-3 w-fit rounded-xl" style="background:rgba(51,65,85,0.5);">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+               stroke="#a78bfa" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <span class="text-slate-500 text-xs font-medium tracking-widest uppercase">
+          信頼の透明性
+        </span>
+        <h3 class="text-slate-50 text-2xl font-bold leading-snug">
+          施工費から<br />ROIまで一気通貫
+        </h3>
+        <p class="text-slate-400 text-sm leading-relaxed">
+          リノベーション費用の概算・想定売却益・月々のコスト削減額まで自動計算。投資判断に必要な情報を一つのダッシュボードで把握できます。
+        </p>
+        <div class="mt-auto pt-4" style="border-top:1px solid rgba(51,65,85,0.7);">
+          <span class="text-slate-500 text-xs font-medium"># 投資対効果の明確化</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================ -->
+<!-- FINAL CTA SECTION                                             -->
+<!-- ============================================================ -->
+<section class="relative py-32 px-6 overflow-hidden"
+         aria-label="シミュレーター起動への最終導線">
+
+  <div aria-hidden="true" class="divider absolute top-0 left-0 right-0"></div>
+
+  <!-- 背景グロー -->
+  <div aria-hidden="true"
+       class="absolute inset-0 flex items-center justify-center pointer-events-none">
+    <div style="width:700px; height:350px; border-radius:50%;
+                background:radial-gradient(ellipse,rgba(16,185,129,0.07) 0%,transparent 70%);
+                filter:blur(32px);"></div>
+  </div>
+
+  <div class="scroll-reveal relative z-10 max-w-2xl mx-auto text-center">
+    <h2 class="text-3xl md:text-5xl font-black text-slate-50 mb-6 leading-tight">
+      今すぐ、あなたの家の<br />
+      <span class="text-emerald-400">未来を診断</span>する。
+    </h2>
+    <p class="text-slate-400 text-lg mb-10 leading-relaxed">
+      無料診断は3分で完了。あとは結果を見て、<br class="hidden md:block" />
+      3D空間でリノベ後の暮らしを体験するだけです。
+    </p>
+
+    <button onclick="goSimulator()"
+            class="btn-primary inline-flex items-center gap-3
+                   bg-emerald-500 text-slate-900 font-black
+                   text-base md:text-lg px-10 md:px-14 py-4 md:py-5
+                   rounded-2xl shadow-2xl focus-visible:outline-none
+                   focus-visible:ring-2 focus-visible:ring-emerald-300"
+            style="box-shadow:0 16px 48px rgba(16,185,129,0.3);"
+            aria-label="3Dシミュレーションを開始する">
+      3Dシミュレーションを開始する
+      <span class="slide-arrow" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+          <polyline points="12 5 19 12 12 19"/>
+        </svg>
+      </span>
+    </button>
+
+    <p class="text-slate-600 text-xs mt-5">
+      無料 &middot; 会員登録不要 &middot; クレジットカード不要
+    </p>
+  </div>
+</section>
+
+
+<!-- ============================================================ -->
+<!-- FOOTER                                                        -->
+<!-- ============================================================ -->
+<footer class="py-10 px-6" style="border-top:1px solid rgba(30,41,59,0.8);"
+        role="contentinfo" aria-label="サイトフッター">
+  <div class="max-w-5xl mx-auto flex flex-col md:flex-row
+              items-center justify-between gap-4">
+
+    <!-- ロゴ -->
+    <div class="flex items-center gap-2">
+      <div class="w-6 h-6 rounded flex items-center justify-center bg-emerald-500">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+             stroke="#0f172a" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6"  y1="20" x2="6"  y2="14"/>
+        </svg>
+      </div>
+      <span class="text-slate-500 font-black text-sm tracking-widest">KUMIKAE</span>
+    </div>
+
+    <p class="text-slate-600 text-xs" id="copyright">
+      &copy; 2025 KUMIKAE. All rights reserved.
+    </p>
+
+    <!-- フッターリンク -->
+    <nav aria-label="フッターナビゲーション">
+      <ul class="flex items-center gap-6">
+        <li><button class="text-slate-600 hover:text-slate-400 text-xs
+                           transition-colors duration-200">プライバシーポリシー</button></li>
+        <li><button class="text-slate-600 hover:text-slate-400 text-xs
+                           transition-colors duration-200">利用規約</button></li>
+        <li><button class="text-slate-600 hover:text-slate-400 text-xs
+                           transition-colors duration-200">お問い合わせ</button></li>
+      </ul>
+    </nav>
+  </div>
+</footer>
+
+
+<!-- ============================================================ -->
+<!-- JAVASCRIPT                                                    -->
+<!-- ============================================================ -->
+<script>
+  // ── 設定 ────────────────────────────────────────────────────
+  const SIMULATOR_URL = '/simulator';  // 本番URLに差し替え
+
+  // ── シミュレーター遷移 ──────────────────────────────────────
+  function goSimulator() {
+    alert('🚀 シミュレーターへ遷移します\n（本番環境では実際のURLへリダイレクトされます）');
+    // 本番: window.location.href = SIMULATOR_URL;
+  }
+
+  // ── 築年数カード選択 ─────────────────────────────────────────
+  let selectedParam = null;
+
+  function selectAge(el, param) {
+    // 全カードをリセット
+    document.querySelectorAll('.age-card').forEach(card => {
+      card.classList.remove('selected');
+      card.setAttribute('aria-checked', 'false');
+
+      const icon   = card.querySelector('.card-icon');
+      const label  = card.querySelector('.card-label');
+      const check  = card.querySelector('.card-check');
+
+      icon.style.background = 'rgba(51,65,85,0.6)';
+      icon.style.color      = '#94a3b8';
+      label.style.color     = '#f1f5f9';
+      check.classList.add('hidden');
+      check.classList.remove('flex');
+    });
+
+    // 選択したカードをアクティブ化
+    el.classList.add('selected');
+    el.setAttribute('aria-checked', 'true');
+
+    const icon  = el.querySelector('.card-icon');
+    const label = el.querySelector('.card-label');
+    const check = el.querySelector('.card-check');
+
+    icon.style.background = 'rgba(16,185,129,0.2)';
+    icon.style.color      = '#34d399';
+    label.style.color     = '#34d399';
+    check.classList.remove('hidden');
+    check.classList.add('flex');
+
+    selectedParam = param;
+
+    // スタートボタンを有効化
+    const btn = document.getElementById('startBtn');
+    btn.disabled = false;
+    btn.setAttribute('aria-disabled', 'false');
+    btn.style.background  = '#10b981';
+    btn.style.color       = '#0f172a';
+    btn.style.border      = 'none';
+    btn.style.cursor      = 'pointer';
+    btn.style.boxShadow   = '0 12px 40px rgba(16,185,129,0.3)';
+    btn.classList.add('btn-primary');
+  }
+
+  // ── 選択してシミュレーター起動 ─────────────────────────────
+  function handleStart() {
+    if (!selectedParam) return;
+    alert(`🚀 /simulator?age=${selectedParam} へ遷移します\n（本番環境では実際のURLへリダイレクトされます）`);
+    // 本番: window.location.href = `${SIMULATOR_URL}?age=${selectedParam}`;
+  }
+
+  // ── スクロール連動フェードイン（IntersectionObserver）──────
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target); // 一度だけ発火
+        }
+      });
+    },
+    { threshold: 0.12, rootMargin: '0px 0px -60px 0px' }
+  );
+
+  document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
+
+  // ── コピーライト年 動的更新 ────────────────────────────────
+  document.getElementById('copyright').innerHTML =
+    `&copy; ${new Date().getFullYear()} KUMIKAE. All rights reserved.`;
+</script>
+
+</body>
 </html>
